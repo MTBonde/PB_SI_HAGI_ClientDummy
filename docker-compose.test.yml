@@ -1,0 +1,25 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - test-net
+
+  dummyclient:
+    build:
+      context: ./DummyClient
+      dockerfile: Dockerfile
+    depends_on:
+      - rabbitmq
+    environment:
+      - AUTH_URL=http://auth:8080
+      - REGISTRY_URL=http://registry:8080
+      - GAME_URL=http://game:8080
+    networks:
+      - test-net
+
+networks:
+  test-net:
+    driver: bridge
