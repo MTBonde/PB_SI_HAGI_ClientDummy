@@ -43,6 +43,7 @@ catch (Exception ex)
 {
     Console.WriteLine();
     Console.WriteLine("========================================");
+    Console.WriteLine($"Error: {ex.Message}");
     Console.WriteLine("Did u forget to start docker?");
     Environment.Exit(1);
 }
