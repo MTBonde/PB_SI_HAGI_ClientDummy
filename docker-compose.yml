@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - hagi-net
+
+  auth:
+    image: ghcr.io/mtbonde/hagi-authservice:0.1.0
+    ports:
+      - "5000:8080"
+    networks:
+      - hagi-net
+
+  registry:
+    image: ghcr.io/mtbonde/hagi-registryservice:0.1.0
+    ports:
+      - "5001:8080"
+    networks:
+      - hagi-net
+
+  game:
+    image: ghcr.io/mtbonde/hagi-gameserverservice:0.1.0
+    ports:
+      - "5002:8080"
+    networks:
+      - hagi-net
+
+  session:
+    image: ghcr.io/mtbonde/hagi-sessionservice:0.1.0
+    depends_on:
+      - rabbitmq
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+    networks:
+      - hagi-net
+
+  chat:
+    image: ghcr.io/mtbonde/hagi-chatservice:0.1.0
+    depends_on:
+      - rabbitmq
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+    networks:
+      - hagi-net
+
+  dummyclient:
+    build:
+      context: ./DummyClient
+      dockerfile: Dockerfile
+    depends_on:
+      - auth
+      - registry
+      - game
+    environment:
+      - AUTH_URL=http://auth:8080
+      - REGISTRY_URL=http://registry:8080
+      - GAME_URL=http://game:8080
+    networks:
+      - hagi-net
+
+networks:
+  hagi-net:
+    driver: bridge
