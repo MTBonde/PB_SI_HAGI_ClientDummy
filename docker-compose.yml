@@ -16,7 +16,7 @@ services:
       - hagi-net
 
   registry:
-    image: ghcr.io/mtbonde/hagi-registryservice:0.2.0
+    image: ghcr.io/mtbonde/hagi-registryservice:0.2.2
     ports:
       - "5001:8080"
     networks:
