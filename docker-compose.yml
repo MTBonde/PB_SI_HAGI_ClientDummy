@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   rabbitmq:
@@ -41,6 +40,17 @@ services:
 
   chat:
     image: ghcr.io/mtbonde/hagi-chatservice:0.1.0
+    depends_on:
+      - rabbitmq
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+    networks:
+      - hagi-net
+
+  relay:
+    image: ghcr.io/mtbonde/hagi-relayservice:0.1.0
+    ports:
+      - "5004:8080"
     depends_on:
       - rabbitmq
     environment:
