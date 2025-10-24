@@ -9,7 +9,7 @@ services:
       - hagi-net
 
   auth:
-    image: ghcr.io/mtbonde/hagi-authservice:0.1.0
+    image: ghcr.io/mtbonde/hagi-authservice:0.2.1
     ports:
       - "5000:8080"
     networks:
