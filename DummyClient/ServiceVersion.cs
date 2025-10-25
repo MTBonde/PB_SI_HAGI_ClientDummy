@@ -9,3 +9,4 @@ public static class ServiceVersion
 // testing auth service 0.1.1
 // testing registry service 0.1.2
 // testing relayv0.2 websocket 0.1.3
+// fixing relay to v0.2.2 so it matches auth 0.1.4

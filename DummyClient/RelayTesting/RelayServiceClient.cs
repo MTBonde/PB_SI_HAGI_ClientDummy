@@ -6,12 +6,64 @@ namespace DummyClient;
 public class RelayServiceClient : IDisposable
 {
     private readonly string baseUrl;
+    private readonly HttpClient httpClient;
     private ClientWebSocket? webSocketClient;
     private CancellationTokenSource? cancellationTokenSource;
 
     public RelayServiceClient(string baseUrl)
     {
         this.baseUrl = baseUrl;
+        this.httpClient = new HttpClient { BaseAddress = new Uri(baseUrl) };
+    }
+
+    public async Task<HealthCheckResult> GetHealthStatus()
+    {
+        try
+        {
+            var response = await httpClient.GetAsync("/health");
+            var content = await response.Content.ReadAsStringAsync();
+
+            return new HealthCheckResult
+            {
+                IsHealthy = response.IsSuccessStatusCode,
+                StatusCode = response.StatusCode,
+                Message = content
+            };
+        }
+        catch (Exception ex)
+        {
+            return new HealthCheckResult
+            {
+                IsHealthy = false,
+                StatusCode = System.Net.HttpStatusCode.ServiceUnavailable,
+                ErrorMessage = ex.Message
+            };
+        }
+    }
+
+    public async Task<ServiceVersionResult> GetServiceVersion()
+    {
+        try
+        {
+            var response = await httpClient.GetAsync("/version");
+            var version = await response.Content.ReadAsStringAsync();
+
+            return new ServiceVersionResult
+            {
+                Success = response.IsSuccessStatusCode,
+                StatusCode = response.StatusCode,
+                Version = version
+            };
+        }
+        catch (Exception ex)
+        {
+            return new ServiceVersionResult
+            {
+                Success = false,
+                StatusCode = System.Net.HttpStatusCode.ServiceUnavailable,
+                ErrorMessage = ex.Message
+            };
+        }
     }
 
     public async Task<WebSocketConnectionResult> ConnectToRelayServiceWebSocket(string jwtToken)
@@ -157,7 +209,24 @@ public class RelayServiceClient : IDisposable
         cancellationTokenSource?.Cancel();
         cancellationTokenSource?.Dispose();
         webSocketClient?.Dispose();
+        httpClient?.Dispose();
     }
+}
+
+public class HealthCheckResult
+{
+    public bool IsHealthy { get; init; }
+    public System.Net.HttpStatusCode StatusCode { get; init; }
+    public string Message { get; init; } = string.Empty;
+    public string? ErrorMessage { get; init; }
+}
+
+public class ServiceVersionResult
+{
+    public bool Success { get; init; }
+    public System.Net.HttpStatusCode StatusCode { get; init; }
+    public string Version { get; init; } = string.Empty;
+    public string? ErrorMessage { get; init; }
 }
 
 public class WebSocketConnectionResult

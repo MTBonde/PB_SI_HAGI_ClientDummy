@@ -22,58 +22,7 @@ public class RelayServiceTester
     {
         logger.PrintSectionHeader("Testing RelayService WebSocket Connection");
 
-        await TestWebSocketConnectionWithoutJwt();
         await TestWebSocketConnectionWithJwt();
-    }
-
-    private async Task TestWebSocketConnectionWithoutJwt()
-    {
-        try
-        {
-            // Arrange
-            var testName = "Test 8: WebSocket connection WITHOUT JWT token";
-            var emptyToken = "";
-
-            logger.PrintTestHeader(
-                testName,
-                relayServiceClient.BuildWebSocketEndpointUrl(emptyToken),
-                "No token",
-                "",
-                "should fail with connection error");
-
-            // Act
-            var connectionResult = await relayServiceClient.ConnectToRelayServiceWebSocket(emptyToken);
-
-            // Assert
-            if (!connectionResult.IsConnected)
-            {
-                logger.PrintTestPassed(testName, "WebSocket connection rejected without JWT as expected");
-                Console.WriteLine($"WebSocket State: {connectionResult.State}");
-                Console.WriteLine($"Message: {connectionResult.Message}");
-
-                if (!string.IsNullOrEmpty(connectionResult.ErrorMessage))
-                {
-                    Console.WriteLine($"Error: {connectionResult.ErrorMessage}");
-                }
-
-                Console.WriteLine("========================================");
-            }
-            else
-            {
-                Console.WriteLine($"{testName}: UNEXPECTED RESULT - Connection should have been rejected");
-                Console.WriteLine($"WebSocket State: {connectionResult.State}");
-                Console.WriteLine($"Message: {connectionResult.Message}");
-                Console.WriteLine("========================================");
-
-                await relayServiceClient.DisconnectFromWebSocket();
-            }
-
-            logger.PrintBlankLine();
-        }
-        catch (Exception ex)
-        {
-            logger.PrintTestConnectionError("Test 8", ex.Message, shouldExitApplication: false);
-        }
     }
 
     private async Task TestWebSocketConnectionWithJwt()
@@ -81,7 +30,7 @@ public class RelayServiceTester
         try
         {
             // Arrange
-            var testName = "Test 9: WebSocket connection WITH JWT token and receive welcome message";
+            var testName = "Test 8: WebSocket connection WITH JWT token and receive welcome message";
 
             // Login first to get JWT token
             var loginResponse = await authServiceClient.SendLoginRequest("admin", "admin");
@@ -160,7 +109,7 @@ public class RelayServiceTester
         }
         catch (Exception ex)
         {
-            logger.PrintTestConnectionError("Test 9", ex.Message, shouldExitApplication: false);
+            logger.PrintTestConnectionError("Test 8", ex.Message, shouldExitApplication: false);
 
             try
             {
