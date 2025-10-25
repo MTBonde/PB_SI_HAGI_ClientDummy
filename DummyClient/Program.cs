@@ -4,6 +4,7 @@ using DummyClient;
 using var httpClient = new HttpClient();
 var baseAuthUrl = Environment.GetEnvironmentVariable("AUTH_URL") ?? "http://localhost:5000";
 var baseRegistryUrl = Environment.GetEnvironmentVariable("REGISTRY_URL") ?? "http://localhost:5001";
+var baseRelayUrl = Environment.GetEnvironmentVariable("RELAY_URL") ?? "http://localhost:5004";
 var authApiVersion = "v0.2.1";
 var registryApiVersion = "v0.2.2";
 
@@ -19,6 +20,7 @@ await Task.Delay(5000);
 // Initialize clients and logger
 var authServiceClient = new AuthServiceClient(httpClient, baseAuthUrl, authApiVersion);
 var registryServiceClient = new RegistryServiceClient(httpClient, baseRegistryUrl, registryApiVersion);
+var relayServiceClient = new RelayServiceClient(baseRelayUrl);
 var logger = new TestResultLogger();
 
 // Run auth service tests
@@ -28,3 +30,10 @@ await authServiceTester.RunAllTests();
 // Run registry service tests
 var registryServiceTester = new RegistryServiceTester(registryServiceClient, authServiceClient, logger);
 await registryServiceTester.RunAllTests();
+
+// Run relay service tests
+var relayServiceTester = new RelayServiceTester(relayServiceClient, authServiceClient, logger);
+await relayServiceTester.RunAllTests();
+
+// Cleanup
+relayServiceClient.Dispose();

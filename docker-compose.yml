@@ -48,7 +48,7 @@ services:
       - hagi-net
 
   relay:
-    image: ghcr.io/mtbonde/hagi-relayservice:0.1.0
+    image: ghcr.io/mtbonde/hagi-relayservice:0.2.1
     ports:
       - "5004:8080"
     depends_on:
@@ -66,10 +66,12 @@ services:
       - auth
       - registry
       - game
+      - relay
     environment:
       - AUTH_URL=http://auth:8080
       - REGISTRY_URL=http://registry:8080
       - GAME_URL=http://game:8080
+      - RELAY_URL=http://relay:8080
     networks:
       - hagi-net
 
