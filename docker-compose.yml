@@ -7,6 +7,13 @@ services:
       - "15672:15672"
     networks:
       - hagi-net
+  
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - hagi-net
 
   auth:
     image: ghcr.io/mtbonde/hagi-authservice:0.2.1
@@ -16,7 +23,7 @@ services:
       - hagi-net
 
   registry:
-    image: ghcr.io/mtbonde/hagi-registryservice:0.2.2
+    image: ghcr.io/mtbonde/hagi-registryservice:0.2.3
     ports:
       - "5001:8080"
     networks:
@@ -30,16 +37,18 @@ services:
       - hagi-net
 
   session:
-    image: ghcr.io/mtbonde/hagi-sessionservice:0.1.0
+    image: ghcr.io/mtbonde/hagi-sessionservice:0.2.0
     depends_on:
       - rabbitmq
+      - redis
     environment:
       - RABBITMQ_HOST=rabbitmq
+      - REDIS_HOST=redis:6379
     networks:
       - hagi-net
 
   chat:
-    image: ghcr.io/mtbonde/hagi-chatservice:0.1.0
+    image: ghcr.io/mtbonde/hagi-chatservice:0.2.0
     depends_on:
       - rabbitmq
     environment:
@@ -48,7 +57,7 @@ services:
       - hagi-net
 
   relay:
-    image: ghcr.io/mtbonde/hagi-relayservice:0.2.2
+    image: ghcr.io/mtbonde/hagi-relayservice:0.3.0
     ports:
       - "5004:8080"
     depends_on:
