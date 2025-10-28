@@ -11,3 +11,4 @@ public static class ServiceVersion
 // testing relayv0.2 websocket 0.1.3
 // fixing relay to v0.2.2 so it matches auth 0.1.4
 // relay v0.3, chat v0.2, session v0.2 registry v0.2.3 = 0.1.5
+// beeter compose and healthcheck 0.1.6
