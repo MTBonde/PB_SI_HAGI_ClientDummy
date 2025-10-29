@@ -47,7 +47,12 @@ services:
       - hagi-net
 
   registry:
-    image: ghcr.io/mtbonde/hagi-registryservice:0.2.3
+    image: ghcr.io/mtbonde/hagi-registryservice:0.3.0
+    healthcheck:
+      test: [ "CMD", "bash", "-c", "timeout 2 bash -c '</dev/tcp/127.0.0.1/8080'" ]
+      interval: 5s
+      timeout: 3s
+      retries: 30
     ports:
       - "5001:8080"
     networks:
@@ -79,7 +84,7 @@ services:
       - hagi-net
 
   chat:
-    image: ghcr.io/mtbonde/hagi-chatservice:0.2.0
+    image: ghcr.io/mtbonde/hagi-chatservice:0.3.0
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -106,13 +111,13 @@ services:
       dockerfile: Dockerfile
     depends_on:
       auth:
-        condition: service_healthy   # only Auth is readiness-aware right now
+        condition: service_healthy   
       registry:
-        condition: service_started   # we must switch to 'service_healthy' when it gets /health/ready
+        condition: service_healthy   
       game:
         condition: service_started
       relay:
-        condition: service_started
+        condition: service_started  # we must switch to 'service_healthy' when it gets /health/ready
     environment:
       - AUTH_URL=http://auth:8080
       - REGISTRY_URL=http://registry:8080

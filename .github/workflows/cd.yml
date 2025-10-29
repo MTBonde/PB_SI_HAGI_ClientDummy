@@ -27,7 +27,7 @@ jobs:
       - name: Build and push Docker image
         run: |
           IMAGE_NAME=ghcr.io/mtbonde/hagi-clientdummy
-          VERSION=0.1.7        
+          VERSION=0.1.7.1        
 
           docker build -t $IMAGE_NAME:$VERSION -t $IMAGE_NAME:latest ./DummyClient
           docker push $IMAGE_NAME --all-tags
