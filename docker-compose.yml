@@ -5,6 +5,15 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+    command: >
+      bash -c "
+      echo 'HAGIDEVRABBITCOOKIE123456789' > /var/lib/rabbitmq/.erlang.cookie &&
+      chmod 400 /var/lib/rabbitmq/.erlang.cookie &&
+      chown rabbitmq:rabbitmq /var/lib/rabbitmq/.erlang.cookie &&
+      rabbitmq-server
+      "
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
       test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
       interval: 5s
@@ -26,7 +35,12 @@ services:
       - hagi-net
 
   auth:
-    image: ghcr.io/mtbonde/hagi-authservice:0.2.1
+    image: ghcr.io/mtbonde/hagi-authservice:0.4.0
+    healthcheck:
+      test: ["CMD", "bash", "-c", "timeout 2 bash -c '</dev/tcp/127.0.0.1/8080'"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
     ports:
       - "5000:8080"
     networks:
@@ -91,10 +105,14 @@ services:
       context: ./DummyClient
       dockerfile: Dockerfile
     depends_on:
-      - auth
-      - registry
-      - game
-      - relay
+      auth:
+        condition: service_healthy   # only Auth is readiness-aware right now
+      registry:
+        condition: service_started   # we must switch to 'service_healthy' when it gets /health/ready
+      game:
+        condition: service_started
+      relay:
+        condition: service_started
     environment:
       - AUTH_URL=http://auth:8080
       - REGISTRY_URL=http://registry:8080
@@ -106,3 +124,6 @@ services:
 networks:
   hagi-net:
     driver: bridge
+
+volumes:
+  rabbitmq_data:
