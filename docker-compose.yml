@@ -94,7 +94,7 @@ services:
       - hagi-net
 
   relay:
-    image: ghcr.io/mtbonde/hagi-relayservice:0.3.0
+    image: ghcr.io/mtbonde/hagi-relayservice:0.4.1
     ports:
       - "5004:8080"
     depends_on:
