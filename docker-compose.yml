@@ -71,7 +71,7 @@ services:
       - hagi-net
 
   session:
-    image: ghcr.io/mtbonde/hagi-sessionservice:0.2.1
+    image: ghcr.io/mtbonde/hagi-sessionservice:0.4.0
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -83,18 +83,23 @@ services:
     networks:
       - hagi-net
 
-  chat:
-    image: ghcr.io/mtbonde/hagi-chatservice:0.3.0
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-    environment:
-      - RABBITMQ_HOST=rabbitmq
-    networks:
-      - hagi-net
+#  chat:
+#    image: ghcr.io/mtbonde/hagi-chatservice:0.4.0
+#    depends_on:
+#      rabbitmq:
+#        condition: service_healthy
+#    environment:
+#      - RABBITMQ_HOST=rabbitmq
+#    networks:
+#      - hagi-net
 
   relay:
-    image: ghcr.io/mtbonde/hagi-relayservice:0.4.1
+    image: ghcr.io/mtbonde/hagi-relayservice:0.5.2
+    healthcheck:
+      test: [ "CMD", "bash", "-c", "timeout 2 bash -c '</dev/tcp/127.0.0.1/8080'" ]
+      interval: 5s
+      timeout: 3s
+      retries: 30
     ports:
       - "5004:8080"
     depends_on:
@@ -117,7 +122,7 @@ services:
       game:
         condition: service_started
       relay:
-        condition: service_started  # we must switch to 'service_healthy' when it gets /health/ready
+        condition: service_healthy  
     environment:
       - AUTH_URL=http://auth:8080
       - REGISTRY_URL=http://registry:8080

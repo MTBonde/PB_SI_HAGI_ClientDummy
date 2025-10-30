@@ -2,7 +2,7 @@ namespace DummyClient;
 
 public static class ServiceVersion
 {
-    public const string Current = "0.1.7.1";
+    public const string Current = "0.1.8";
 }
 
 // initial 0.1.0
@@ -14,3 +14,4 @@ public static class ServiceVersion
 // beeter compose and healthcheck 0.1.6
 // testing hagi.robust in authv0.4 =  v1.7
 // robust in reg and chat v0.1.7.1
+// refactor relay v0.5 and session v0.4 hagi.robust included = v0.1.8
