@@ -58,7 +58,7 @@ services:
     networks:
       - hagi-net
 
-  game:
+  gs1:
     image: ghcr.io/alexanderlind98/unrealmp_server:latest
     ports:
       - "5002:7777/udp"
@@ -67,6 +67,33 @@ services:
       - SERVER_HOST=127.0.0.1
       - SERVER_PORT=5002
       - REGISTRY_URL=http://registry:8080
+      - REGISTRY_ENDPOINT=/api/v0.3.0/Registry/register
+    networks:
+      - hagi-net
+  
+  gs2:
+    image: ghcr.io/alexanderlind98/unrealmp_server:latest
+    ports:
+      - "5003:7777/udp"
+      - "5003:8080"
+    environment:
+      - SERVER_HOST=127.0.0.1
+      - SERVER_PORT=5003
+      - REGISTRY_URL=http://registry:8080
+      - REGISTRY_ENDPOINT=/api/v0.3.0/Registry/register
+    networks:
+      - hagi-net
+        
+  gs3:
+    image: ghcr.io/alexanderlind98/unrealmp_server:latest
+    ports:
+      - "5004:7777/udp"
+      - "5004:8080"
+    environment:
+      - SERVER_HOST=127.0.0.1
+      - SERVER_PORT=5004
+      - REGISTRY_URL=http://registry:8080
+      - REGISTRY_ENDPOINT=/api/v0.3.0/Registry/register
     networks:
       - hagi-net
 
@@ -77,20 +104,8 @@ services:
       interval: 5s
       timeout: 3s
       retries: 30
-#    ports:
-#      - "5006:8080"
     networks:
       - hagi-net
-
-#  chat:
-#    image: ghcr.io/mtbonde/hagi-chatservice:0.4.0
-#    depends_on:
-#      rabbitmq:
-#        condition: service_healthy
-#    environment:
-#      - RABBITMQ_HOST=rabbitmq
-#    networks:
-#      - hagi-net
 
   relay:
     image: ghcr.io/mtbonde/hagi-relayservice:0.5.2
