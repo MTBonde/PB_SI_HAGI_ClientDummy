@@ -15,3 +15,4 @@ public static class ServiceVersion
 // testing hagi.robust in authv0.4 =  v1.7
 // robust in reg and chat v0.1.7.1
 // refactor relay v0.5 and session v0.4 hagi.robust included = v0.1.8
+// v0.1.9 new rabbit 4, getting ready for adding unreal 
