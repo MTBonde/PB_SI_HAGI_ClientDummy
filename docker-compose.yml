@@ -117,7 +117,7 @@ services:
       - hagi-net
 
   relay:
-    image: ghcr.io/mtbonde/hagi-relayservice:0.5.2
+    image: ghcr.io/mtbonde/hagi-relayservice:0.5.4
     healthcheck:
       test: [ "CMD", "bash", "-c", "timeout 2 bash -c '</dev/tcp/127.0.0.1/8080'" ]
       interval: 5s
