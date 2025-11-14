@@ -1,0 +1,347 @@
+# Kubernetes Namespace - isolates all resources in separate namespace (does not exist in compose)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: hagi
+---
+# Deployment - Kubernetes equivalent of a compose "service"
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq  # Service name from compose
+  namespace: hagi  # Place in hagi namespace
+spec:
+  replicas: 1  # Number of pods to run (scale in compose requires swarm)
+  selector:  # Kubernetes-specific: matches pods with labels
+    matchLabels:
+      app: rabbitmq
+  template:  # Pod template - container is defined here
+    metadata:
+      labels:  # Labels used for service discovery
+        app: rabbitmq
+    spec:
+      containers:
+      - name: rabbitmq
+        image: rabbitmq:4-management  # Same image as in compose: rabbitmq:4-management
+        ports:  # Compose ports "5672:5672" and "15672:15672" become containerPort here
+        - containerPort: 5672
+          name: amqp
+        - containerPort: 15672
+          name: management
+        command:  # Compose command field - custom startup command
+        - sh
+        - -c
+        - echo HAGIDEVRABBITCOOKIE123456789 > /var/lib/rabbitmq/.erlang.cookie && chmod 600 /var/lib/rabbitmq/.erlang.cookie && docker-entrypoint.sh rabbitmq-server
+        readinessProbe:  # Kubernetes health check - maps to compose healthcheck
+          exec:
+            command:
+            - rabbitmq-diagnostics
+            - -q
+            - ping
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        volumeMounts:  # Compose volumes "rabbitmq_data:/var/lib/rabbitmq" becomes volumeMount
+        - name: rabbitmq-data
+          mountPath: /var/lib/rabbitmq
+      volumes:  # Volume definition - uses emptyDir instead of named volume (data lost on pod restart)
+      - name: rabbitmq-data
+        emptyDir: {}
+---
+# Service - Kubernetes networking layer (findes ikke rigtig i docker compose)
+# Exposes Deployment and handles service discovery + load balancing
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq  # Service name - other pods access via "rabbitmq:5672"
+  namespace: hagi
+spec:
+  selector:  # Connects to Deployment with matching labels
+    app: rabbitmq
+  ports:  # Port mapping from compose "5672:5672" becomes service ports
+  - name: amqp
+    port: 5672  # Port inside cluster
+    targetPort: 5672  # Port in container
+    nodePort: 30672  # External port on host (30000-32767 range)
+  - name: management
+    port: 15672
+    targetPort: 15672
+    nodePort: 31672
+  type: NodePort  # Makes port accessible on host IP (like compose port mapping)
+---
+# Redis Deployment - maps from compose service "redis"
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: hagi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine  # Compose: image: redis:7-alpine
+        ports:  # Compose: ports "6379:6379"
+        - containerPort: 6379
+        readinessProbe:  # Compose: healthcheck with "redis-cli ping"
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+# Redis Service - exposes redis internally and externally
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis  # Accessible via "redis:6379" from other pods
+  namespace: hagi
+spec:
+  selector:
+    app: redis
+  ports:
+  - port: 6379  # Cluster-internal port
+    targetPort: 6379  # Container port
+    nodePort: 30379  # Host port (compose: "6379:6379")
+  type: NodePort
+---
+# Auth Service Deployment - compose service "auth"
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth
+  namespace: hagi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth
+  template:
+    metadata:
+      labels:
+        app: auth
+    spec:
+      containers:
+      - name: auth
+        image: ghcr.io/mtbonde/hagi-authservice:0.4.0  # Compose: image: ghcr.io/mtbonde/hagi-authservice:0.4.0
+        ports:  # Compose: ports "5000:8080" (internal port 8080)
+        - containerPort: 8080
+        readinessProbe:  # Compose: healthcheck test TCP socket
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+# Auth Service - exposes auth service
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth  # Other services access via "http://auth:8080"
+  namespace: hagi
+spec:
+  selector:
+    app: auth
+  ports:
+  - port: 8080
+    targetPort: 8080
+    nodePort: 30500  # Host port (compose: "5000:8080")
+  type: NodePort
+---
+# Registry Service Deployment - compose service "registry"
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry
+  namespace: hagi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: registry
+  template:
+    metadata:
+      labels:
+        app: registry
+    spec:
+      containers:
+      - name: registry
+        image: ghcr.io/mtbonde/hagi-registryservice:0.3.0  # Compose: image: ghcr.io/mtbonde/hagi-registryservice:0.3.0
+        ports:  # Compose: ports "5001:8080"
+        - containerPort: 8080
+        readinessProbe:  # Compose: healthcheck TCP socket
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+# Registry Service - game servers register themselves here
+apiVersion: v1
+kind: Service
+metadata:
+  name: registry  # Accessible via "http://registry:8080"
+  namespace: hagi
+spec:
+  selector:
+    app: registry
+  ports:
+  - port: 8080
+    targetPort: 8080
+    nodePort: 30501  # Host port (compose: "5001:8080")
+  type: NodePort
+---
+# Game Server 1 Deployment - compose service "gs1"
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gameserver-1
+  namespace: hagi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gameserver-1
+  template:
+    metadata:
+      labels:
+        app: gameserver-1
+    spec:
+      containers:
+      - name: gameserver
+        image: ghcr.io/alexanderlind98/unrealmp_server:latest  # Compose: image: ghcr.io/alexanderlind98/unrealmp_server:latest
+        ports:  # Compose: ports "5002:7777/udp" and "5002:8080"
+        - containerPort: 7777
+          protocol: UDP  # Kubernetes-specific: UDP protocol declaration
+          name: game-udp
+        - containerPort: 8080
+          name: http
+        env:  # Compose: environment variables
+        - name: SERVER_HOST
+          value: "127.0.0.1"
+        - name: SERVER_PORT
+          value: "30502"
+        - name: REGISTRY_URL
+          value: "http://registry:8080"  # Kubernetes service discovery works the same way
+          #value: "http://registry:30501"  # Kubernetes service discovery works the same way
+        - name: REGISTRY_ENDPOINT
+          value: "/api/v0.3.0/Registry/register"
+---
+# Game Server 1 Service - exposes both UDP and TCP ports
+apiVersion: v1
+kind: Service
+metadata:
+  name: gameserver-1
+  namespace: hagi
+spec:
+  selector:
+    app: gameserver-1
+  ports:
+  - name: game-udp
+    port: 7777
+    targetPort: 7777
+    protocol: UDP  # UDP traffic to game server
+    nodePort: 30502  # Host port (compose: "5002:7777/udp")
+  - name: http
+    port: 8080
+    targetPort: 8080
+    nodePort: 30503  # Host port (compose: "5002:8080")
+  type: NodePort
+---
+# Session Service Deployment - compose service "session"
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: session
+  namespace: hagi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: session
+  template:
+    metadata:
+      labels:
+        app: session
+    spec:
+      containers:
+      - name: session
+        # Compose: image: ghcr.io/mtbonde/hagi-sessionservice:0.4.0
+        image: ghcr.io/mtbonde/hagi-sessionservice:0.4.0
+        # Compose: no external ports exposed
+        ports:
+        - containerPort: 8080
+        # Compose: healthcheck TCP socket
+        readinessProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+# Session Service - internal access only (ClusterIP)
+apiVersion: v1
+kind: Service
+metadata:
+  name: session  # Accessible via "http://session:8080" internally
+  namespace: hagi
+spec:
+  selector:
+    app: session
+  ports:
+  - port: 8080
+    targetPort: 8080
+  type: ClusterIP  # Cluster-internal only (compose: no port mapping)
+---
+# Relay Service Deployment - compose service "relay"
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: relay
+  namespace: hagi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: relay
+  template:
+    metadata:
+      labels:
+        app: relay
+    spec:
+      containers:
+      - name: relay
+        # Compose: image: ghcr.io/mtbonde/hagi-relayservice:0.5.4
+        image: ghcr.io/mtbonde/hagi-relayservice:0.5.4       
+        # Compose: ports "5005:8080"
+        ports:
+        - containerPort: 8080
+        # Compose: environment - connects to RabbitMQ
+        env:
+        - name: RABBITMQ_HOST
+          value: "rabbitmq"  # Service discovery finds rabbitmq via DNS
+        # Compose: healthcheck - depends_on rabbitmq (healthy)
+        readinessProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+---
+# Relay Service - exposes relay to external clients
+apiVersion: v1
+kind: Service
+metadata:
+  name: relay  # Accessible via "http://relay:8080"
+  namespace: hagi
+spec:
+  selector:
+    app: relay
+  ports:
+  - port: 8080
+    targetPort: 8080
+    nodePort: 30505  # Host port (compose: "5005:8080")
+  type: NodePort
