@@ -47,7 +47,7 @@ services:
       - hagi-net
 
   registry:
-    image: ghcr.io/mtbonde/hagi-registryservice:0.2.3
+    image: ghcr.io/mtbonde/hagi-registryservice:0.3.0
     healthcheck:
       test: [ "CMD", "bash", "-c", "timeout 2 bash -c '</dev/tcp/127.0.0.1/8080'" ]
       interval: 5s
@@ -70,7 +70,7 @@ services:
       - SERVER_HOST=127.0.0.1
       - SERVER_PORT=5002
       - REGISTRY_URL=http://registry:8080
-      - REGISTRY_ENDPOINT=/api/v0.2.3/Registry/register
+      - REGISTRY_ENDPOINT=/api/v0.3.0/Registry/register
     networks:
       - hagi-net
   
@@ -86,7 +86,7 @@ services:
       - SERVER_HOST=127.0.0.1
       - SERVER_PORT=5003
       - REGISTRY_URL=http://registry:8080
-      - REGISTRY_ENDPOINT=/api/v0.2.3/Registry/register
+      - REGISTRY_ENDPOINT=/api/v0.3.0/Registry/register
     networks:
       - hagi-net
         
@@ -102,7 +102,7 @@ services:
       - SERVER_HOST=127.0.0.1
       - SERVER_PORT=5004
       - REGISTRY_URL=http://registry:8080
-      - REGISTRY_ENDPOINT=/api/v0.2.3/Registry/register
+      - REGISTRY_ENDPOINT=/api/v0.3.0/Registry/register
     networks:
       - hagi-net
 
